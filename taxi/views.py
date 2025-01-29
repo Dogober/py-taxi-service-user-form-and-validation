@@ -83,15 +83,17 @@ class CarDetailView(LoginRequiredMixin, generic.DetailView):
 
 
 class AssignOrDeleteDriver(LoginRequiredMixin, generic.View):
+    model = Car
 
-    def post(self, request, car_id):
-        car = Car.objects.get(id=car_id)
+    def get(self, request, pk):
+        print(request)
+        car = Car.objects.get(id=pk)
         if car and request.user:
             if request.user in car.drivers.all():
                 car.drivers.remove(request.user)
             else:
                 car.drivers.add(request.user)
-            return redirect("taxi:car-detail", pk=car_id)
+            return redirect("taxi:car-detail", pk=pk)
         return Http404
 
 
