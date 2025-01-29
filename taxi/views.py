@@ -1,10 +1,17 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.http import Http404
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .forms import DriverCreationForm, DriverLicenseUpdateForm, CarForm
+from .forms import (
+    DriverCreationForm,
+    DriverLicenseUpdateForm,
+    CarForm,
+    CustomAuthenticationForm
+)
 from .models import Driver, Car, Manufacturer
 
 
@@ -74,14 +81,18 @@ class CarListView(LoginRequiredMixin, generic.ListView):
 class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
 
-    def post(self, request, car_id, user_id):
+
+class AssignOrDeleteDriver(LoginRequiredMixin, generic.View):
+
+    def post(self, request, car_id):
         car = Car.objects.get(id=car_id)
-        driver = Driver.objects.get(id=user_id)
-        if driver in car.drivers.all():
-            car.drivers.remove(driver)
-        else:
-            car.drivers.add(driver)
-        return redirect("taxi:car-detail", pk=car_id)
+        if car and request.user:
+            if request.user in car.drivers.all():
+                car.drivers.remove(request.user)
+            else:
+                car.drivers.add(request.user)
+            return redirect("taxi:car-detail", pk=car_id)
+        return Http404
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
@@ -124,3 +135,15 @@ class DriverDetailView(LoginRequiredMixin, generic.DetailView):
 class DriverLicenseUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = Driver
     form_class = DriverLicenseUpdateForm
+
+
+class CustomLoginView(LoginView):
+    form_class = CustomAuthenticationForm
+
+    def form_valid(self, form):
+        remember_me = form.cleaned_data.get("remember_me")
+        if remember_me:
+            self.request.session.set_expiry(604800)
+        else:
+            self.request.session.set_expiry(0)
+        return super().form_valid(form)

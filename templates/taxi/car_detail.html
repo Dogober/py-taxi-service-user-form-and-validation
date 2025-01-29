@@ -11,25 +11,13 @@
     <div class="d-flex justify-content-between">
       <div><h3>Drivers</h3></div>
       {% if user in car.drivers.all %}
-        <div>
-          <form
-              method="post"
-              action="{% url 'taxi:car-detail-remove-driver' car.id user.id %}"
-          >
-            {% csrf_token %}
-              <input type="submit" value="Delete me from this car" class="btn btn-danger">
-          </form>
-        </div>
+        <a class="btn btn-danger" href="{% url 'taxi:assign-or-delete-driver' car.id %}">
+          Delete me from this car
+        </a>
         {% else %}
-        <div>
-          <form
-              method="post"
-              action="{% url 'taxi:car-detail-add-driver' car.id user.id %}"
-          >
-            {% csrf_token %}
-            <input type="submit" value="Assign me to this car" class="btn btn-success">
-          </form>
-        </div>
+          <a class="btn btn-success" href="{% url 'taxi:assign-or-delete-driver' car.id %}">
+            Assign me to this car
+          </a>
       {% endif %}
     </div>
     {% for driver in car.drivers.all %}
