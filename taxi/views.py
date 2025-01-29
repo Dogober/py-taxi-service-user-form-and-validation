@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.http import Http404
-from django.shortcuts import render, redirect
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -82,19 +82,17 @@ class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
 
 
-class AssignOrDeleteDriver(LoginRequiredMixin, generic.View):
-    model = Car
-
-    def get(self, request, pk):
-        print(request)
-        car = Car.objects.get(id=pk)
-        if car and request.user:
-            if request.user in car.drivers.all():
-                car.drivers.remove(request.user)
-            else:
-                car.drivers.add(request.user)
-            return redirect("taxi:car-detail", pk=pk)
-        return Http404
+@login_required
+def assign_or_delete_driver_view(
+        request: HttpRequest,
+        pk: int
+) -> HttpResponse:
+    car = get_object_or_404(Car, pk=pk)
+    if request.user in car.drivers.all():
+        car.drivers.remove(request.user)
+    else:
+        car.drivers.add(request.user)
+    return redirect("taxi:car-detail", pk=pk)
 
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
